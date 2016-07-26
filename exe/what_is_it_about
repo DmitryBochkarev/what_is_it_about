@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+require 'what_is_it_about/cli'
+
+WhatIsItAbout::CLI.start
