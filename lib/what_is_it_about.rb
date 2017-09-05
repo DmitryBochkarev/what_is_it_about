@@ -3,7 +3,6 @@ require 'bundler'
 require 'yaml'
 require 'open-uri'
 require 'json'
-require 'pry'
 
 # for parsing gemfile lock
 ENV['BUNDLE_GEMFILE'] = Pathname.new(Dir.pwd).join(__FILE__).to_s
