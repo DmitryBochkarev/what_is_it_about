@@ -35,11 +35,6 @@ module WhatIsItAbout
       report(old_content, new_content)
     end
 
-    desc 'set_github_token TOKEN', ''
-    def set_github_token(token)
-      WhatIsItAbout.config.set('github', 'token', token)
-    end
-
     private
 
     def report(old_content, new_content)

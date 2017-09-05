@@ -8,42 +8,33 @@ module WhatIsItAbout
       end
 
       def to_s
-        lines = @summary.gems.each_with_object([]) do |gem, lines|
-          case
-          when gem.added?
-            lines << [
-              '+',
-              gem.name,
-              gem.versions[:new],
-              gem_source(gem, :new)
-            ].join(' ')
-          when gem.removed?
-            lines << [
-              '-',
-              gem.name,
-              gem.versions[:old],
-              gem_source(gem, :old)
-            ].join(' ')
-          when gem.changed?
-            version =
-              if gem.version_changed?
-                "#{gem.versions[:old]} => #{gem.versions[:new]}"
-              else
-                gem.versions[:old]
-              end
-            source =
-              if gem.source_changed?
-                "#{gem_source(gem, :old)} => #{gem_source(gem, :new)}"
-              else
+        lines = @summary.gem_groups.each_with_object([]) do |(_group, gems), lines|
+          gems.each do |gem|
+            if gem.added?
+              lines << [
+                '+',
+                gem.name,
+                gem.versions[:new],
+                gem_source(gem, :new)
+              ].join(' ')
+            elsif gem.removed?
+              lines << [
+                '-',
+                gem.name,
+                gem.versions[:old],
                 gem_source(gem, :old)
-              end
-            lines << [
-              'C',
-              gem.name,
-              version,
-              source
-            ].join(' ')
-            gem.commits_log.each do |type, log|
+              ].join(' ')
+            elsif gem.changed?
+              version_line = "#{gem_source(gem, :old)} => #{gem_source(gem, :new)}"
+              lines << [
+                'C',
+                gem.name,
+                version_line
+              ].join(' ')
+            end
+          end
+          if gems.first.changed?
+            gems.first.commits_log.each do |type, log|
               next unless log
               next if log[:commits].empty?
               padding = ' '*4
@@ -51,6 +42,7 @@ module WhatIsItAbout
               padding *= 2
               message_padding = padding * 2
               log[:commits].each do |commit|
+                next if commit[:parents].size == 2 # merge
                 lines << [
                   padding + commit[:commit][:author][:name],
                   commit[:html_url]
@@ -61,13 +53,6 @@ module WhatIsItAbout
                 lines << padded_message
               end
             end
-          else
-            lines << [
-              '=',
-              gem.name,
-              gem.versions[:old],
-              gem_source(gem, :old)
-            ].join(' ')
           end
         end
         lines.join("\n")
@@ -78,11 +63,11 @@ module WhatIsItAbout
       def gem_source(gem, version)
         case gem.source_types[version]
         when :rubygems
-          'rubygems'
+          gem.versions[version]
         when :path
           gem.paths[version]
         when :git
-          "#{gem.source_repositories[version]}##{gem.source_branches[version]}(#{gem.source_revisions[version]})"
+          "#{gem.source_branches[version]}##{gem.source_revisions[version]}"
         else
           raise "Unknown source type for #{gem.inspect}"
         end
